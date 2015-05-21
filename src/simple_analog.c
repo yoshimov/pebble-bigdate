@@ -6,16 +6,19 @@ static Window *window;
 static Layer *s_simple_bg_layer, *s_date_layer, *s_hands_layer;
 static TextLayer *s_day_label, *s_num_label;
 
-static GPath *s_tick_paths[NUM_CLOCK_TICKS];
+//static GPath *s_tick_paths[NUM_CLOCK_TICKS];
+static GPoint bglines[NUM_CLOCK_TICKS][2];
 static GPath *s_minute_arrow, *s_hour_arrow;
 static char s_num_buffer[4], s_day_buffer[6];
 
 static void bg_update_proc(Layer *layer, GContext *ctx) {
+  GRect bounds = layer_get_bounds(layer);
   graphics_context_set_fill_color(ctx, GColorBlack);
-  graphics_fill_rect(ctx, layer_get_bounds(layer), 0, GCornerNone);
-  graphics_context_set_fill_color(ctx, GColorWhite);
+  graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+  graphics_context_set_stroke_color(ctx, GColorWhite);
   for (int i = 0; i < NUM_CLOCK_TICKS; ++i) {
-    gpath_draw_filled(ctx, s_tick_paths[i]);
+//    gpath_draw_outline(ctx, s_tick_paths[i]);
+    graphics_draw_line(ctx, bglines[i][0], bglines[i][1]);
   }
 }
 
@@ -133,8 +136,15 @@ static void init() {
   gpath_move_to(s_minute_arrow, center);
   gpath_move_to(s_hour_arrow, center);
 
+  int32_t angle, pos = 50, length = 2;
   for (int i = 0; i < NUM_CLOCK_TICKS; ++i) {
-    s_tick_paths[i] = gpath_create(&ANALOG_BG_POINTS[i]);
+    angle = TRIG_MAX_ANGLE * (int32_t)i / NUM_CLOCK_TICKS;
+//    APP_LOG(APP_LOG_LEVEL_INFO, "angle %ld", angle);
+    bglines[i][0].x = (int16_t)(sin_lookup(angle) * pos / TRIG_MAX_RATIO) + center.x;
+    bglines[i][0].y = (int16_t)(-cos_lookup(angle) * pos / TRIG_MAX_RATIO) + center.y;
+    bglines[i][1].x = (int16_t)(sin_lookup(angle) * (pos + length) / TRIG_MAX_RATIO) + center.x;
+    bglines[i][1].y = (int16_t)(-cos_lookup(angle) * (pos + length) / TRIG_MAX_RATIO) + center.y;
+//    s_tick_paths[i] = gpath_create(&path);
   }
 
   tick_timer_service_subscribe(SECOND_UNIT, handle_second_tick);
@@ -145,7 +155,7 @@ static void deinit() {
   gpath_destroy(s_hour_arrow);
 
   for (int i = 0; i < NUM_CLOCK_TICKS; ++i) {
-    gpath_destroy(s_tick_paths[i]);
+//    gpath_destroy(s_tick_paths[i]);
   }
 
   tick_timer_service_unsubscribe();
