@@ -7,7 +7,13 @@
     "longName": "My Simple Analog",
     "projectType": "native",
     "resources": {
-        "media": []
+        "media": [
+            {
+                "file": "images/modern_background2.png",
+                "name": "modern_background2",
+                "type": "png"
+            }
+        ]
     },
     "sdkVersion": "3",
     "shortName": "My Simple Analog",

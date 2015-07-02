@@ -1,10 +1,12 @@
 #include "simple_analog.h"
 
-#include "pebble.h"
+#include <pebble.h>
 
 static Window *window;
 static Layer *s_simple_bg_layer, *s_date_layer, *s_hands_layer;
 static TextLayer *s_day_label, *s_num_label;
+static GBitmap *back_bitmap;
+static BitmapLayer *back_layer;
 
 //static GPath *s_tick_paths[NUM_CLOCK_TICKS];
 static GPoint bglines[NUM_CLOCK_TICKS][2];
@@ -16,8 +18,16 @@ static void bg_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_fill_color(ctx, GColorBlack);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
   graphics_context_set_stroke_color(ctx, GColorWhite);
+#ifdef PBL_COLOR
+  graphics_context_set_antialiased(ctx, true);
+#endif
   for (int i = 0; i < NUM_CLOCK_TICKS; ++i) {
 //    gpath_draw_outline(ctx, s_tick_paths[i]);
+//    if (i % 5 == 0) {
+//      graphics_context_set_stroke_width(ctx, 2);
+//    } else {
+//      graphics_context_set_stroke_width(ctx, 1);
+//    }
     graphics_draw_line(ctx, bglines[i][0], bglines[i][1]);
   }
 }
@@ -35,9 +45,9 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
     .y = (int16_t)(-cos_lookup(second_angle) * (int32_t)second_hand_length / TRIG_MAX_RATIO) + center.y,
   };
 
-  // second hand
-  graphics_context_set_stroke_color(ctx, GColorWhite);
-  graphics_draw_line(ctx, second_hand, center);
+#ifdef PBL_COLOR
+  graphics_context_set_antialiased(ctx, true);
+#endif
 
   // minute/hour hand
   graphics_context_set_fill_color(ctx, GColorWhite);
@@ -51,6 +61,14 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
   gpath_rotate_to(s_hour_arrow, (TRIG_MAX_ANGLE * (((t->tm_hour % 12) * 6) + (t->tm_min / 10))) / (12 * 6));
   gpath_draw_filled(ctx, s_hour_arrow);
   gpath_draw_outline(ctx, s_hour_arrow);
+
+  // second hand
+#ifdef PBL_COLOR
+  graphics_context_set_stroke_color(ctx, GColorRed);
+#else
+  graphics_context_set_stroke_color(ctx, GColorWhite);
+#endif
+  graphics_draw_line(ctx, second_hand, center);
 
   // dot in the middle
   graphics_context_set_fill_color(ctx, GColorBlack);
@@ -76,37 +94,52 @@ static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  s_simple_bg_layer = layer_create(bounds);
-  layer_set_update_proc(s_simple_bg_layer, bg_update_proc);
-  layer_add_child(window_layer, s_simple_bg_layer);
+  back_bitmap = gbitmap_create_with_resource(RESOURCE_ID_modern_background2);
+  back_layer = bitmap_layer_create(bounds);
+  bitmap_layer_set_bitmap(back_layer, back_bitmap);
+  layer_add_child(window_layer, bitmap_layer_get_layer(back_layer));
+
+//  s_simple_bg_layer = layer_create(bounds);
+//  layer_set_update_proc(s_simple_bg_layer, bg_update_proc);
+//  layer_add_child(window_layer, s_simple_bg_layer);
+
+  s_hands_layer = layer_create(bounds);
+  layer_set_update_proc(s_hands_layer, hands_update_proc);
+  layer_add_child(window_layer, s_hands_layer);
 
   s_date_layer = layer_create(bounds);
   layer_set_update_proc(s_date_layer, date_update_proc);
   layer_add_child(window_layer, s_date_layer);
 
-  s_day_label = text_layer_create(GRect(46, 114, 27, 20));
+  s_day_label = text_layer_create(GRect(45, 100, 60, 32));
   text_layer_set_text(s_day_label, s_day_buffer);
-  text_layer_set_background_color(s_day_label, GColorBlack);
+  text_layer_set_background_color(s_day_label, GColorClear);
+#ifdef PBL_COLOR
+  text_layer_set_text_color(s_day_label, GColorBrightGreen);
+#else
   text_layer_set_text_color(s_day_label, GColorWhite);
-  text_layer_set_font(s_day_label, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+#endif
+  text_layer_set_font(s_day_label, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
 
   layer_add_child(s_date_layer, text_layer_get_layer(s_day_label));
 
-  s_num_label = text_layer_create(GRect(73, 114, 18, 20));
+  s_num_label = text_layer_create(GRect(50, 30, 60, 32));
   text_layer_set_text(s_num_label, s_num_buffer);
-  text_layer_set_background_color(s_num_label, GColorBlack);
+  text_layer_set_background_color(s_num_label, GColorClear);
+#ifdef PBL_COLOR
+  text_layer_set_text_color(s_num_label, GColorBrightGreen);
+#else
   text_layer_set_text_color(s_num_label, GColorWhite);
-  text_layer_set_font(s_num_label, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+#endif
+  text_layer_set_font(s_num_label, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
 
   layer_add_child(s_date_layer, text_layer_get_layer(s_num_label));
-
-  s_hands_layer = layer_create(bounds);
-  layer_set_update_proc(s_hands_layer, hands_update_proc);
-  layer_add_child(window_layer, s_hands_layer);
 }
 
 static void window_unload(Window *window) {
-  layer_destroy(s_simple_bg_layer);
+  bitmap_layer_destroy(back_layer);
+  gbitmap_destroy(back_bitmap);
+  //  layer_destroy(s_simple_bg_layer);
   layer_destroy(s_date_layer);
 
   text_layer_destroy(s_day_label);
@@ -136,7 +169,7 @@ static void init() {
   gpath_move_to(s_minute_arrow, center);
   gpath_move_to(s_hour_arrow, center);
 
-  int32_t angle, pos = 50, length = 2;
+  int32_t angle, pos = 70, length = 2;
   for (int i = 0; i < NUM_CLOCK_TICKS; ++i) {
     angle = TRIG_MAX_ANGLE * (int32_t)i / NUM_CLOCK_TICKS;
 //    APP_LOG(APP_LOG_LEVEL_INFO, "angle %ld", angle);
