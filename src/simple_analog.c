@@ -100,7 +100,7 @@ static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  back_bitmap = gbitmap_create_with_resource(RESOURCE_ID_modern_background2);
+  back_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MODERN_BACKGROUND);
   back_layer = bitmap_layer_create(bounds);
   bitmap_layer_set_bitmap(back_layer, back_bitmap);
   layer_add_child(window_layer, bitmap_layer_get_layer(back_layer));
