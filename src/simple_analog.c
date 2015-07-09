@@ -3,12 +3,10 @@
 #include <pebble.h>
 
 #define NUM_Y 40
-#define DAY_Y 110
+#define DAY_Y 90
 
 static Window *window;
 static Layer *s_date_layer, *s_hands_layer;
-static TextLayer *s_day_label, *s_num_label;
-static TextLayer *s_day_label_shadow, *s_num_label_shadow;
 static GBitmap *back_bitmap;
 static BitmapLayer *back_layer;
 
@@ -58,17 +56,40 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
   graphics_fill_rect(ctx, GRect(bounds.size.w / 2 - 1, bounds.size.h / 2 - 1, 3, 3), 0, GCornerNone);
 }
 
+static void draw_outline_text(GContext *ctx, const char* text, const GFont font, const GRect rect, GColor forecolor, GColor outlinecolor) {
+  graphics_context_set_text_color(ctx, outlinecolor);
+  graphics_draw_text(ctx, text, font, GRect(rect.origin.x+1, rect.origin.y+1, rect.size.w, rect.size.h), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, text, font, GRect(rect.origin.x+1, rect.origin.y-1, rect.size.w, rect.size.h), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, text, font, GRect(rect.origin.x-1, rect.origin.y+1, rect.size.w, rect.size.h), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, text, font, GRect(rect.origin.x-1, rect.origin.y-1, rect.size.w, rect.size.h), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+  graphics_context_set_text_color(ctx, forecolor);
+  graphics_draw_text(ctx, text, font, rect, GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+}
+
 static void date_update_proc(Layer *layer, GContext *ctx) {
   time_t now = time(NULL);
   struct tm *t = localtime(&now);
 
   strftime(s_day_buffer, sizeof(s_day_buffer), "%a", t);
-  text_layer_set_text(s_day_label, s_day_buffer);
-  text_layer_set_text(s_day_label_shadow, s_day_buffer);
+  GFont font =  fonts_get_system_font(FONT_KEY_BITHAM_42_LIGHT);
+#ifdef PBL_COLOR
+  if (t->tm_wday == 0 || t->tm_wday == 6) {
+    draw_outline_text(ctx, s_day_buffer, font, GRect(10, DAY_Y, 120, 45), GColorRed, GColorBulgarianRose);
+  } else {
+    draw_outline_text(ctx, s_day_buffer, font, GRect(10, DAY_Y, 120, 45), GColorGreen, GColorArmyGreen);
+  }
+#else
+  draw_outline_text(ctx, s_day_buffer, font, GRect(10, DAY_Y, 120, 45), GColorWhite, GColorBlack);
+#endif
 
   strftime(s_num_buffer, sizeof(s_num_buffer), "%d", t);
-  text_layer_set_text(s_num_label, s_num_buffer);
-  text_layer_set_text(s_num_label_shadow, s_num_buffer);
+#ifdef PBL_COLOR
+  font = fonts_get_system_font(FONT_KEY_LECO_28_LIGHT_NUMBERS);
+  draw_outline_text(ctx, s_num_buffer, font, GRect(10, NUM_Y, 120, 32), GColorGreen, GColorArmyGreen);
+#else
+  font = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+  draw_outline_text(ctx, s_num_buffer, font, GRect(10, NUM_Y, 120, 32), GColorWhite, GColorBlack);
+#endif
 }
 
 static void handle_second_tick(struct tm *tick_time, TimeUnits units_changed) {
@@ -95,60 +116,6 @@ static void window_load(Window *window) {
   s_date_layer = layer_create(bounds);
   layer_set_update_proc(s_date_layer, date_update_proc);
   layer_add_child(window_layer, s_date_layer);
-
-  s_day_label_shadow = text_layer_create(GRect(11, DAY_Y + 1, 124, 25));
-  text_layer_set_text(s_day_label_shadow, s_day_buffer);
-  text_layer_set_background_color(s_day_label_shadow, GColorClear);
-#ifdef PBL_COLOR
-  text_layer_set_text_color(s_day_label_shadow, GColorArmyGreen);
-#else
-  text_layer_set_text_color(s_day_label_shadow, GColorBlack);
-#endif
-  text_layer_set_font(s_day_label_shadow, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
-  text_layer_set_text_alignment(s_day_label_shadow, GTextAlignmentCenter);
-
-  layer_add_child(s_date_layer, text_layer_get_layer(s_day_label_shadow));
-
-  s_day_label = text_layer_create(GRect(10, DAY_Y, 124, 25));
-  text_layer_set_text(s_day_label, s_day_buffer);
-  text_layer_set_background_color(s_day_label, GColorClear);
-#ifdef PBL_COLOR
-  text_layer_set_text_color(s_day_label, GColorBrightGreen);
-#else
-  text_layer_set_text_color(s_day_label, GColorWhite);
-#endif
-  text_layer_set_font(s_day_label, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
-  text_layer_set_text_alignment(s_day_label, GTextAlignmentCenter);
-
-  layer_add_child(s_date_layer, text_layer_get_layer(s_day_label));
-
-  s_num_label_shadow = text_layer_create(GRect(11, NUM_Y + 1, 124, 32));
-  text_layer_set_text(s_num_label_shadow, s_num_buffer);
-  text_layer_set_background_color(s_num_label_shadow, GColorClear);
-#ifdef PBL_COLOR
-  text_layer_set_text_color(s_num_label_shadow, GColorArmyGreen);
-  text_layer_set_font(s_num_label_shadow, fonts_get_system_font(FONT_KEY_LECO_28_LIGHT_NUMBERS));
-#else
-  text_layer_set_text_color(s_num_label_shadow, GColorBlack);
-  text_layer_set_font(s_num_label_shadow, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
-#endif
-  text_layer_set_text_alignment(s_num_label_shadow, GTextAlignmentCenter);
-
-  layer_add_child(s_date_layer, text_layer_get_layer(s_num_label_shadow));
-
-  s_num_label = text_layer_create(GRect(10, NUM_Y, 124, 32));
-  text_layer_set_text(s_num_label, s_num_buffer);
-  text_layer_set_background_color(s_num_label, GColorClear);
-#ifdef PBL_COLOR
-  text_layer_set_text_color(s_num_label, GColorBrightGreen);
-  text_layer_set_font(s_num_label, fonts_get_system_font(FONT_KEY_LECO_28_LIGHT_NUMBERS));
-#else
-  text_layer_set_text_color(s_num_label, GColorWhite);
-  text_layer_set_font(s_num_label, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
-#endif
-  text_layer_set_text_alignment(s_num_label, GTextAlignmentCenter);
-
-  layer_add_child(s_date_layer, text_layer_get_layer(s_num_label));
 }
 
 static void window_unload(Window *window) {
@@ -156,11 +123,6 @@ static void window_unload(Window *window) {
   gbitmap_destroy(back_bitmap);
   //  layer_destroy(s_simple_bg_layer);
   layer_destroy(s_date_layer);
-
-  text_layer_destroy(s_day_label);
-  text_layer_destroy(s_num_label);
-  text_layer_destroy(s_day_label_shadow);
-  text_layer_destroy(s_num_label_shadow);
 
   layer_destroy(s_hands_layer);
 }
