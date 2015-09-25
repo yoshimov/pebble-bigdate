@@ -66,11 +66,11 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
 }
 
 void draw_outline_text(GContext *ctx, const char* text, const GFont font, const GRect rect, GColor forecolor, GColor outlinecolor) {
-  graphics_context_set_text_color(ctx, outlinecolor);
-  graphics_draw_text(ctx, text, font, GRect(rect.origin.x+1, rect.origin.y+1, rect.size.w, rect.size.h), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
-  graphics_draw_text(ctx, text, font, GRect(rect.origin.x+1, rect.origin.y-1, rect.size.w, rect.size.h), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
-  graphics_draw_text(ctx, text, font, GRect(rect.origin.x-1, rect.origin.y+1, rect.size.w, rect.size.h), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
-  graphics_draw_text(ctx, text, font, GRect(rect.origin.x-1, rect.origin.y-1, rect.size.w, rect.size.h), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+//  graphics_context_set_text_color(ctx, outlinecolor);
+//  graphics_draw_text(ctx, text, font, GRect(rect.origin.x+1, rect.origin.y+1, rect.size.w, rect.size.h), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+//  graphics_draw_text(ctx, text, font, GRect(rect.origin.x+1, rect.origin.y-1, rect.size.w, rect.size.h), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+//  graphics_draw_text(ctx, text, font, GRect(rect.origin.x-1, rect.origin.y+1, rect.size.w, rect.size.h), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+//  graphics_draw_text(ctx, text, font, GRect(rect.origin.x-1, rect.origin.y-1, rect.size.w, rect.size.h), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
   graphics_context_set_text_color(ctx, forecolor);
   graphics_draw_text(ctx, text, font, rect, GTextOverflowModeFill, GTextAlignmentCenter, NULL);
 }
@@ -84,23 +84,23 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
   GPoint date_point = TEXT_POINTS[hand_layout][0];
   GFont font = fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
 #ifdef PBL_COLOR
-  draw_outline_text(ctx, s_num_buffer, font, GRect(date_point.x, date_point.y, 40, 30), GColorGreen, GColorArmyGreen);
+  draw_outline_text(ctx, s_num_buffer, font, GRect(date_point.x, date_point.y, 72, 30), GColorGreen, GColorArmyGreen);
 #else
-  draw_outline_text(ctx, s_num_buffer, font, GRect(date_point.x, date_point.y, 40, 30), GColorWhite, GColorBlack);
+  draw_outline_text(ctx, s_num_buffer, font, GRect(date_point.x, date_point.y, 72, 30), GColorWhite, GColorBlack);
 #endif
 
   // week
   strftime(s_day_buffer, sizeof(s_day_buffer), "%a", t);
   GPoint week_point = TEXT_POINTS[hand_layout][1];
-  font =  fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+//  font =  fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
 #ifdef PBL_COLOR
   if (t->tm_wday == 0 || t->tm_wday == 6) {
-    draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 40, 30), GColorRed, GColorBulgarianRose);
+    draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 30), GColorRed, GColorBulgarianRose);
   } else {
-    draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 40, 30), GColorGreen, GColorArmyGreen);
+    draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 30), GColorGreen, GColorArmyGreen);
   }
 #else
-  draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 40, 30), GColorWhite, GColorBlack);
+  draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 30), GColorWhite, GColorBlack);
 #endif
 }
 
