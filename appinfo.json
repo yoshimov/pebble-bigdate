@@ -9,6 +9,11 @@
     "resources": {
         "media": [
             {
+                "file": "images/modern_background_num.png",
+                "name": "IMAGE_BG_NUM",
+                "type": "png"
+            },
+            {
                 "file": "images/bigdate_face_icon_bw.png",
                 "menuIcon": true,
                 "name": "IMAGE_ICON",
@@ -38,7 +43,7 @@
         "aplite",
         "basalt"
     ],
-    "uuid": "ecc8f112-318f-4ee2-be11-53c63b8a1139",
+    "uuid": "aacc53d2-bca3-4ced-b67c-2ed1d0ad0059",
     "versionLabel": "1.0",
     "watchapp": {
         "watchface": true

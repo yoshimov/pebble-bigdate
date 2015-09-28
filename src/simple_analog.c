@@ -82,26 +82,37 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
   // date
   strftime(s_num_buffer, sizeof(s_num_buffer), "%d", t);
   GPoint date_point = TEXT_POINTS[hand_layout][0];
-  GFont font = fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
+  GFont font = fonts_get_system_font(FONT_KEY_BITHAM_42_LIGHT);
 #ifdef PBL_COLOR
-  draw_outline_text(ctx, s_num_buffer, font, GRect(date_point.x, date_point.y, 72, 30), GColorGreen, GColorArmyGreen);
+  draw_outline_text(ctx, s_num_buffer, font, GRect(date_point.x, date_point.y, 72, 45), GColorGreen, GColorArmyGreen);
 #else
-  draw_outline_text(ctx, s_num_buffer, font, GRect(date_point.x, date_point.y, 72, 30), GColorWhite, GColorBlack);
+  draw_outline_text(ctx, s_num_buffer, font, GRect(date_point.x, date_point.y, 72, 45), GColorWhite, GColorBlack);
 #endif
 
   // week
   strftime(s_day_buffer, sizeof(s_day_buffer), "%a", t);
   GPoint week_point = TEXT_POINTS[hand_layout][1];
-//  font =  fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+  font =  fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
 #ifdef PBL_COLOR
   if (t->tm_wday == 0 || t->tm_wday == 6) {
-    draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 30), GColorRed, GColorBulgarianRose);
+    draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), GColorRed, GColorBulgarianRose);
   } else {
-    draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 30), GColorGreen, GColorArmyGreen);
+    draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), GColorGreen, GColorArmyGreen);
   }
 #else
-  draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 30), GColorWhite, GColorBlack);
+  draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), GColorWhite, GColorBlack);
 #endif
+
+  // bluetooth
+  if (!bluetooth_connection_service_peek()) {
+    font =  fonts_get_system_font(FONT_KEY_GOTHIC_14);
+#ifdef PBL_COLOR
+    graphics_context_set_text_color(ctx, GColorRed);
+#else
+    graphics_context_set_text_color(ctx, GColorWhite);
+#endif
+    graphics_draw_text(ctx, "disconnect", font, GRect(0, 15, 144, 10), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+  }
 }
 
 static void handle_second_tick(struct tm *tick_time, TimeUnits units_changed) {
@@ -112,7 +123,7 @@ static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  back_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BG_LOGO);
+  back_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BG_NUM);
   back_layer = bitmap_layer_create(bounds);
   bitmap_layer_set_bitmap(back_layer, back_bitmap);
   layer_add_child(window_layer, bitmap_layer_get_layer(back_layer));
