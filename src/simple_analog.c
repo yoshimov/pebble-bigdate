@@ -2,9 +2,6 @@
 
 #include <pebble.h>
 
-#define NUM_Y 25
-#define DAY_Y 90
-
 static Window *window;
 static Layer *s_date_layer, *s_hands_layer;
 static GBitmap *back_bitmap;
@@ -13,6 +10,31 @@ static BitmapLayer *back_layer;
 static GPath *s_minute_arrow, *s_hour_arrow;
 static char s_num_buffer[4], s_day_buffer[6];
 static int hand_layout;
+static int second_style;
+static GColor second_color, date_color;
+
+static void config_received_handler(DictionaryIterator *iter, void *context) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "config received");
+  Tuple *second_t = dict_find(iter, KEY_SECOND);
+  if (second_t) {
+    second_style = second_t->value->int16;
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "second style %d", second_style);
+    persist_write_int(KEY_SECOND, second_style);
+  }
+#ifdef PBL_COLOR
+  second_t = dict_find(iter, KEY_SECOND_COLOR);
+  if (second_t) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "second color %ld", second_t->value->int32);
+    second_color = GColorFromHEX(second_t->value->int32);
+    persist_write_int(KEY_SECOND_COLOR, second_t->value->int32);
+  }
+  Tuple *date_t = dict_find(iter, KEY_DATE_COLOR);
+  if (date_t) {
+    date_color = GColorFromHEX(date_t->value->int32);
+    persist_write_int(KEY_DATE_COLOR, date_t->value->int32);
+  }
+#endif
+}
 
 static void hands_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
@@ -50,15 +72,13 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
 //  APP_LOG(APP_LOG_LEVEL_DEBUG, "hand layout %d", hand_layout);
 
   // second hand
-#ifdef PBL_COLOR
-  graphics_context_set_stroke_color(ctx, GColorRed);
-  graphics_context_set_fill_color(ctx, GColorRed);
-#else
-  graphics_context_set_stroke_color(ctx, GColorWhite);
-  graphics_context_set_fill_color(ctx, GColorWhite);
-#endif
-//  graphics_draw_line(ctx, second_hand, center);
-  graphics_fill_circle(ctx, second_hand, 3);
+  graphics_context_set_stroke_color(ctx, second_color);
+  graphics_context_set_fill_color(ctx, second_color);
+  if (second_style == 1) {
+    graphics_fill_circle(ctx, second_hand, 3);
+  } else if (second_style > 1) {
+      graphics_draw_line(ctx, second_hand, center);
+  }
 
   // dot in the middle
   graphics_context_set_fill_color(ctx, GColorBlack);
@@ -83,11 +103,7 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
   strftime(s_num_buffer, sizeof(s_num_buffer), "%d", t);
   GPoint date_point = TEXT_POINTS[hand_layout][0];
   GFont font = fonts_get_system_font(FONT_KEY_BITHAM_42_LIGHT);
-#ifdef PBL_COLOR
-  draw_outline_text(ctx, s_num_buffer, font, GRect(date_point.x, date_point.y, 72, 45), GColorGreen, GColorArmyGreen);
-#else
-  draw_outline_text(ctx, s_num_buffer, font, GRect(date_point.x, date_point.y, 72, 45), GColorWhite, GColorBlack);
-#endif
+  draw_outline_text(ctx, s_num_buffer, font, GRect(date_point.x, date_point.y, 72, 45), date_color, GColorBlack);
 
   // week
   strftime(s_day_buffer, sizeof(s_day_buffer), "%a", t);
@@ -97,10 +113,10 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
   if (t->tm_wday == 0 || t->tm_wday == 6) {
     draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), GColorRed, GColorBulgarianRose);
   } else {
-    draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), GColorGreen, GColorArmyGreen);
+    draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), date_color, GColorArmyGreen);
   }
 #else
-  draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), GColorWhite, GColorBlack);
+  draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), date_color, GColorBlack);
 #endif
 
   // bluetooth
@@ -139,6 +155,28 @@ static void window_load(Window *window) {
   s_date_layer = layer_create(bounds);
   layer_set_update_proc(s_date_layer, date_update_proc);
   layer_add_child(window_layer, s_date_layer);
+
+  // settings
+  if (persist_exists(KEY_SECOND)) {
+    second_style = persist_read_int(KEY_SECOND);
+  } else {
+    second_style = 1;
+  }
+#ifdef PBL_COLOR
+  if (persist_exists(KEY_SECOND_COLOR)) {
+    second_color = GColorFromHEX(persist_read_int(KEY_SECOND_COLOR));
+  } else {
+    second_color = GColorRed;
+  }
+  if (persist_exists(KEY_DATE_COLOR)) {
+    date_color = GColorFromHEX(persist_read_int(KEY_DATE_COLOR));
+  } else {
+    date_color = GColorGreen;
+  }
+#else
+  second_color = GColorWhite;
+  date_color = GColorWhite;
+#endif
 }
 
 static void window_unload(Window *window) {
@@ -161,7 +199,6 @@ static void init() {
   s_day_buffer[0] = '\0';
   s_num_buffer[0] = '\0';
   hand_layout = 0;
-
   // init hand paths
   s_minute_arrow = gpath_create(&MINUTE_HAND_POINTS);
   s_hour_arrow = gpath_create(&HOUR_HAND_POINTS);
@@ -173,6 +210,8 @@ static void init() {
   gpath_move_to(s_hour_arrow, center);
 
   tick_timer_service_subscribe(SECOND_UNIT, handle_second_tick);
+  app_message_register_inbox_received(config_received_handler);
+  app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
 }
 
 static void deinit() {

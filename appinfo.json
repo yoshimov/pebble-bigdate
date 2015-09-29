@@ -1,7 +1,12 @@
 {
-    "appKeys": {},
+    "appKeys": {
+        "KEY_DATE_BLUE": 6,
+        "KEY_DATE_COLOR": 11,
+        "KEY_SECOND": 0,
+        "KEY_SECOND_COLOR": 10
+    },
     "capabilities": [
-        ""
+        "configurable"
     ],
     "companyName": "nomura@pobox.com",
     "longName": "Analog Bigdate",
@@ -43,7 +48,7 @@
         "aplite",
         "basalt"
     ],
-    "uuid": "aacc53d2-bca3-4ced-b67c-2ed1d0ad0059",
+    "uuid": "71f90eed-cb3d-471c-b782-1cc9c59b3135",
     "versionLabel": "1.0",
     "watchapp": {
         "watchface": true

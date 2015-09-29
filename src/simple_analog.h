@@ -38,3 +38,7 @@ static const GPoint TEXT_POINTS[13][2] = {
   {}, // 11
   { {72, 25}, {72, 100}} // 1100
 };
+
+#define KEY_SECOND 0
+#define KEY_SECOND_COLOR 10
+#define KEY_DATE_COLOR 11
