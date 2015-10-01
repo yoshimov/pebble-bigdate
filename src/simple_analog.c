@@ -11,7 +11,7 @@ static GPath *s_minute_arrow, *s_hour_arrow;
 static char s_num_buffer[4], s_day_buffer[6];
 static int hand_layout;
 static int second_style;
-static GColor second_color, date_color;
+static GColor second_color, date_color, hour_color;
 
 static void config_received_handler(DictionaryIterator *iter, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "config received");
@@ -32,6 +32,11 @@ static void config_received_handler(DictionaryIterator *iter, void *context) {
   if (date_t) {
     date_color = GColorFromHEX(date_t->value->int32);
     persist_write_int(KEY_DATE_COLOR, date_t->value->int32);
+  }
+  Tuple *hour_t = dict_find(iter, KEY_HOUR_COLOR);
+  if (hour_t) {
+    hour_color = GColorFromHEX(hour_t->value->int32);
+    persist_write_int(KEY_HOUR_COLOR, hour_t->value->int32);
   }
 #endif
 }
@@ -54,7 +59,7 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
 #endif
 
   // minute/hour hand
-  graphics_context_set_fill_color(ctx, GColorWhite);
+  graphics_context_set_fill_color(ctx, hour_color);
   graphics_context_set_stroke_color(ctx, GColorBlack);
 
   int32_t minute_angle = TRIG_MAX_ANGLE * (t->tm_min * 60 + t->tm_sec) / 3600;
@@ -100,7 +105,7 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
   struct tm *t = localtime(&now);
 
   // date
-  strftime(s_num_buffer, sizeof(s_num_buffer), "%d", t);
+  strftime(s_num_buffer, sizeof(s_num_buffer), "%e", t);
   GPoint date_point = TEXT_POINTS[hand_layout][0];
   GFont font = fonts_get_system_font(FONT_KEY_BITHAM_42_LIGHT);
   draw_outline_text(ctx, s_num_buffer, font, GRect(date_point.x, date_point.y, 72, 45), date_color, GColorBlack);
@@ -173,9 +178,15 @@ static void window_load(Window *window) {
   } else {
     date_color = GColorGreen;
   }
+  if (persist_exists(KEY_HOUR_COLOR)) {
+    hour_color = GColorFromHEX(persist_read_int(KEY_HOUR_COLOR));
+  } else {
+    hour_color = GColorWhite;
+  }
 #else
   second_color = GColorWhite;
   date_color = GColorWhite;
+  hour_color = GColorWhite;
 #endif
 }
 

@@ -15,11 +15,15 @@ Pebble.addEventListener('webviewclosed', function(e) {
 
   var secondColor = configData['second_color'];
   var dateColor = configData['date_color'];
+  var hourColor = configData['hour_color'];
 
   var dict = {};
   dict['KEY_SECOND'] = parseInt(configData['second']);
   dict['KEY_SECOND_COLOR'] = parseInt(secondColor.substring(2), 16);
   dict['KEY_DATE_COLOR'] = parseInt(dateColor.substring(2), 16);
+  if (hourColor) {
+    dict['KEY_HOUR_COLOR'] = parseInt(hourColor.substring(2), 16);
+  }
   console.log('dict: ' + JSON.stringify(dict));
 
   // Send to watchapp
