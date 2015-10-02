@@ -1,0 +1,166 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="https://rawgit.com/pebble/slate/master/dist/css/slate.min.css" />
+  </head>
+  <body>
+  <h1 class="title">BigDate configuration</h1>
+
+  <div class='item-container'>
+    <div class='item-container-content'>
+      <label class='item'>
+        Second hand style
+      <select id="second" class="item-select">
+        <option value="0">None</option>
+        <option value="1" selected>Ball</option>
+        <option value="2">Line</option>
+      </select>
+      </label>
+    </div>
+  </div>  
+
+  <div class='item-container'>
+    <div class='item-container-content'>
+      <label class='item'>
+        Second hand color
+        <input id='second_color' type='text' class='item-color item-color-normal' value='0xff0000'>
+      </label>
+    </div>
+  </div>  
+
+  <div class='item-container'>
+    <div class='item-container-content'>
+      <label class='item'>
+        Date and week color
+        <input id='date_color' type='text' class='item-color item-color-normal' value='0x55ff55'>
+      </label>
+    </div>
+  </div>
+
+  <div class='item-container'>
+    <div class='item-container-content'>
+      <label class='item'>
+        Hour and minute hands color
+        <input id='hour_color' type='text' class='item-color item-color-normal' value='0xffffff'>
+      </label>
+    </div>
+  </div>
+
+  <div class='item-container'>
+    <div class='item-container-content'>
+      <label class='item'>
+        Date size
+      <select id="date_size" class="item-select">
+        <option value="0">Small</option>
+        <option value="1">Medium</option>
+        <option value="2" selected>Large</option>
+      </select>
+      </label>
+    </div>
+  </div>  
+
+  <div class='item-container'>
+    <div class='item-container-content'>
+      <label class='item'>
+        Week size
+      <select id="week_size" class="item-select">
+        <option value="0">Small</option>
+        <option value="1" selected>Medium</option>
+        <option value="2">Large</option>
+      </select>
+      </label>
+    </div>
+  </div>  
+
+  <div class='item-container'>
+    <div class='item-container-content'>
+      <label class='item'>
+        Background
+      <select id="background" class="item-select">
+        <option value="0" selected>Black</option>
+        <option value="1">White</option>
+      </select>
+      </label>
+    </div>
+  </div>  
+
+    <div class='item-container'>
+      <div class='button-container'>
+        <input id='submit_button' type='button' class='item-button' value='SUBMIT'>
+      </div>
+    </div>
+<script type="text/javascript">
+function getConfigData() {
+  var sobj = document.getElementById("second");
+  var scolorobj = document.getElementById("second_color");
+  var dcolorobj = document.getElementById("date_color");
+  var hcolorobj = document.getElementById("hour_color");
+  var dsizeobj = document.getElementById("date_size");
+  var wsizeobj = document.getElementById("week_size");
+  var bobj = document.getElementById("background");
+  localStorage['second'] = sobj.value;
+  localStorage['second_color'] = scolorobj.value;
+  localStorage['date_color'] = dcolorobj.value;
+  localStorage['hour_color'] = hcolorobj.value;
+  localStorage['date_size'] = dsizeobj.value;
+  localStorage['week_size'] = wsizeobj.value;
+  localStorage['background'] = bobj.value;
+  var conf = {"second": sobj.value, "second_color": scolorobj.value, "date_color": dcolorobj.value,
+    "hour_color": hcolorobj.value, "date_size": dsizeobj.value, "week_size": wsizeobj.value, "background":bobj.value};
+  return conf;
+}
+
+  function getQueryParam(variable, defaultValue) {
+    var query = location.search.substring(1);
+    var vars = query.split('&');
+    for (var i = 0; i < vars.length; i++) {
+      var pair = vars[i].split('=');
+      if (pair[0] === variable) {
+        return decodeURIComponent(pair[1]);
+      }
+    }
+    return defaultValue || false;
+  }
+
+  var submitobj = document.getElementById("submit_button");
+  submitobj.addEventListener('click', function(){
+    console.log('Submit');
+    // Set the return URL depending on the runtime environment
+    var return_to = getQueryParam('return_to', 'pebblejs://close#');
+    document.location = return_to + encodeURIComponent(JSON.stringify(getConfigData()));
+  });
+
+(function() {
+  // load settings
+  if (localStorage['second']) {
+    var obj = document.getElementById('second');
+    obj.value = localStorage['second'];
+  }
+  if (localStorage['second_color']) {
+    var obj = document.getElementById('second_color');
+    obj.value = localStorage['second_color'];
+  }
+  if (localStorage['date_color']) {
+    var obj = document.getElementById('date_color');
+    obj.value = localStorage['date_color'];
+  }
+  if (localStorage['hour_color']) {
+    var obj = document.getElementById('hour_color');
+    obj.value = localStorage['hour_color'];
+  }
+  if (localStorage['date_size']) {
+    var obj = document.getElementById('date_size');
+    obj.value = localStorage['date_size'];
+  }
+  if (localStorage['week_size']) {
+    var obj = document.getElementById('week_size');
+    obj.value = localStorage['week_size'];
+  }
+  if (localStorage['background']) {
+    var obj = document.getElementById('background');
+    obj.value = localStorage['background'];
+  }
+})();
+</script>
+<script src="https://rawgit.com/pebble/slate/master/dist/js/slate.min.js"></script>
+  </body>
+</html>
