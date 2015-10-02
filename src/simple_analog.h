@@ -40,6 +40,9 @@ static const GPoint TEXT_POINTS[13][2] = {
 };
 
 #define KEY_SECOND 0
+#define KEY_BACKGROUND 1
+#define KEY_DATE_SIZE 2
+#define KEY_WEEK_SIZE 3
 #define KEY_SECOND_COLOR 10
 #define KEY_DATE_COLOR 11
 #define KEY_HOUR_COLOR 12

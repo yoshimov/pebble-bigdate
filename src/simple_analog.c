@@ -10,34 +10,49 @@ static BitmapLayer *back_layer;
 static GPath *s_minute_arrow, *s_hour_arrow;
 static char s_num_buffer[4], s_day_buffer[6];
 static int hand_layout;
-static int second_style;
+static int second_style, date_size, week_size, background;
 static GColor second_color, date_color, hour_color;
+
+bool set_persist_int(DictionaryIterator *iter, const uint32_t key, int *value) {
+  Tuple *tuple = dict_find(iter, key);
+  if (tuple) {
+    *value = tuple->value->int16;
+    persist_write_int(key, *value);
+    return 1;
+  }
+  return 0;
+}
+
+bool set_persist_color(DictionaryIterator *iter, const uint32_t key, GColor *value) {
+  Tuple *tuple = dict_find(iter, key);
+  if (tuple) {
+    persist_write_int(key, tuple->value->int32);
+#ifdef PBL_COLOR
+    *value = GColorFromHEX(tuple->value->int32);
+#endif
+    return 1;
+  }
+  return 0;
+}
 
 static void config_received_handler(DictionaryIterator *iter, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "config received");
-  Tuple *second_t = dict_find(iter, KEY_SECOND);
-  if (second_t) {
-    second_style = second_t->value->int16;
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "second style %d", second_style);
-    persist_write_int(KEY_SECOND, second_style);
+  set_persist_int(iter, KEY_SECOND, &second_style);
+  set_persist_int(iter, KEY_DATE_SIZE, &date_size);
+  set_persist_int(iter, KEY_WEEK_SIZE, &week_size);
+  if (set_persist_int(iter, KEY_BACKGROUND, &background)) {
+    gbitmap_destroy(back_bitmap);
+    if (background) {
+      back_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BG_NUM_WHITE);
+    } else {
+      back_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BG_NUM);
+    }
+    bitmap_layer_set_bitmap(back_layer, back_bitmap);
   }
 #ifdef PBL_COLOR
-  second_t = dict_find(iter, KEY_SECOND_COLOR);
-  if (second_t) {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "second color %ld", second_t->value->int32);
-    second_color = GColorFromHEX(second_t->value->int32);
-    persist_write_int(KEY_SECOND_COLOR, second_t->value->int32);
-  }
-  Tuple *date_t = dict_find(iter, KEY_DATE_COLOR);
-  if (date_t) {
-    date_color = GColorFromHEX(date_t->value->int32);
-    persist_write_int(KEY_DATE_COLOR, date_t->value->int32);
-  }
-  Tuple *hour_t = dict_find(iter, KEY_HOUR_COLOR);
-  if (hour_t) {
-    hour_color = GColorFromHEX(hour_t->value->int32);
-    persist_write_int(KEY_HOUR_COLOR, hour_t->value->int32);
-  }
+  set_persist_color(iter, KEY_SECOND_COLOR, &second_color);
+  set_persist_color(iter, KEY_DATE_COLOR, &date_color);
+  set_persist_color(iter, KEY_HOUR_COLOR, &hour_color);
 #endif
 }
 
@@ -107,13 +122,26 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
   // date
   strftime(s_num_buffer, sizeof(s_num_buffer), "%e", t);
   GPoint date_point = TEXT_POINTS[hand_layout][0];
-  GFont font = fonts_get_system_font(FONT_KEY_BITHAM_42_LIGHT);
+  GFont font;
+  if (date_size == 0) {
+    font = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+  } else if (date_size == 1) {
+    font = fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
+  } else {
+    font = fonts_get_system_font(FONT_KEY_BITHAM_42_LIGHT);
+  }
   draw_outline_text(ctx, s_num_buffer, font, GRect(date_point.x, date_point.y, 72, 45), date_color, GColorBlack);
 
   // week
   strftime(s_day_buffer, sizeof(s_day_buffer), "%a", t);
   GPoint week_point = TEXT_POINTS[hand_layout][1];
-  font =  fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+  if (week_size == 0) {
+    font =  fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
+  } else if (week_size == 1) {
+    font =  fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+  } else {
+    font =  fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
+  }
 #ifdef PBL_COLOR
   if (t->tm_wday == 0 || t->tm_wday == 6) {
     draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), GColorRed, GColorBulgarianRose);
@@ -140,18 +168,50 @@ static void handle_second_tick(struct tm *tick_time, TimeUnits units_changed) {
   layer_mark_dirty(window_get_root_layer(window));
 }
 
+GColor get_persist_color(const uint32_t key, GColor color) {
+#ifdef PBL_COLOR
+  if (persist_exists(key)) {
+    return GColorFromHEX(persist_read_int(key));
+  }
+#endif
+  return color;
+}
+
+int get_persist_int(const uint32_t key, int value) {
+  if (persist_exists(key)) {
+    return persist_read_int(key);
+  } else {
+    return value;
+  }
+}
+
 static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  back_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BG_NUM);
+  // settings
+  second_style = get_persist_int(KEY_SECOND, 1);
+  date_size = get_persist_int(KEY_DATE_SIZE, 2);
+  week_size = get_persist_int(KEY_WEEK_SIZE, 1);
+  background = get_persist_int(KEY_BACKGROUND, 0);
+#ifdef PBL_COLOR
+  second_color = get_persist_color(KEY_SECOND_COLOR, GColorRed);
+  date_color = get_persist_color(KEY_DATE_COLOR, GColorGreen);
+  hour_color = get_persist_color(KEY_HOUR_COLOR, GColorWhite);
+#else
+  second_color = GColorWhite;
+  date_color = GColorWhite;
+  hour_color = GColorWhite;
+#endif
+
+  if (background) {
+    back_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BG_NUM_WHITE);
+  } else {
+    back_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BG_NUM);
+  }
   back_layer = bitmap_layer_create(bounds);
   bitmap_layer_set_bitmap(back_layer, back_bitmap);
   layer_add_child(window_layer, bitmap_layer_get_layer(back_layer));
-
-//  s_simple_bg_layer = layer_create(bounds);
-//  layer_set_update_proc(s_simple_bg_layer, bg_update_proc);
-//  layer_add_child(window_layer, s_simple_bg_layer);
 
   s_hands_layer = layer_create(bounds);
   layer_set_update_proc(s_hands_layer, hands_update_proc);
@@ -160,34 +220,6 @@ static void window_load(Window *window) {
   s_date_layer = layer_create(bounds);
   layer_set_update_proc(s_date_layer, date_update_proc);
   layer_add_child(window_layer, s_date_layer);
-
-  // settings
-  if (persist_exists(KEY_SECOND)) {
-    second_style = persist_read_int(KEY_SECOND);
-  } else {
-    second_style = 1;
-  }
-#ifdef PBL_COLOR
-  if (persist_exists(KEY_SECOND_COLOR)) {
-    second_color = GColorFromHEX(persist_read_int(KEY_SECOND_COLOR));
-  } else {
-    second_color = GColorRed;
-  }
-  if (persist_exists(KEY_DATE_COLOR)) {
-    date_color = GColorFromHEX(persist_read_int(KEY_DATE_COLOR));
-  } else {
-    date_color = GColorGreen;
-  }
-  if (persist_exists(KEY_HOUR_COLOR)) {
-    hour_color = GColorFromHEX(persist_read_int(KEY_HOUR_COLOR));
-  } else {
-    hour_color = GColorWhite;
-  }
-#else
-  second_color = GColorWhite;
-  date_color = GColorWhite;
-  hour_color = GColorWhite;
-#endif
 }
 
 static void window_unload(Window *window) {
@@ -195,7 +227,6 @@ static void window_unload(Window *window) {
   gbitmap_destroy(back_bitmap);
   //  layer_destroy(s_simple_bg_layer);
   layer_destroy(s_date_layer);
-
   layer_destroy(s_hands_layer);
 }
 

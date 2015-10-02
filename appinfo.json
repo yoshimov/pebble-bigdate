@@ -1,9 +1,12 @@
 {
     "appKeys": {
+        "KEY_BACKGROUND": 1,
         "KEY_DATE_COLOR": 11,
+        "KEY_DATE_SIZE": 2,
         "KEY_HOUR_COLOR": 12,
         "KEY_SECOND": 0,
-        "KEY_SECOND_COLOR": 10
+        "KEY_SECOND_COLOR": 10,
+        "KEY_WEEK_SIZE": 3
     },
     "capabilities": [
         "configurable"
@@ -13,6 +16,11 @@
     "projectType": "native",
     "resources": {
         "media": [
+            {
+                "file": "images/modern_background_num_white.png",
+                "name": "IMAGE_BG_NUM_WHITE",
+                "type": "png"
+            },
             {
                 "file": "images/modern_background_num.png",
                 "name": "IMAGE_BG_NUM",
@@ -49,7 +57,7 @@
         "basalt"
     ],
     "uuid": "aacc53d2-bca3-4ced-b67c-2ed1d0ad0059",
-    "versionLabel": "1.1",
+    "versionLabel": "1.2",
     "watchapp": {
         "watchface": true
     }

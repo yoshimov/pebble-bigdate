@@ -3,7 +3,7 @@ Pebble.addEventListener('ready', function() {
 });
 
 Pebble.addEventListener('showConfiguration', function() {
-  var url = 'https://rawgit.com/yoshimov/93b4e31c5df00e48f7b8/raw/pebble-bigdate.html';
+  var url = 'https://rawgit.com/yoshimov/pebble-bigdate/master/config/config.html';
   console.log('Showing configuration page: ' + url);
 
   Pebble.openURL(url);
@@ -13,16 +13,21 @@ Pebble.addEventListener('webviewclosed', function(e) {
   var configData = JSON.parse(decodeURIComponent(e.response));
   console.log('Configuration page returned: ' + JSON.stringify(configData));
 
-  var secondColor = configData['second_color'];
-  var dateColor = configData['date_color'];
-  var hourColor = configData['hour_color'];
-
   var dict = {};
-  dict['KEY_SECOND'] = parseInt(configData['second']);
-  dict['KEY_SECOND_COLOR'] = parseInt(secondColor.substring(2), 16);
-  dict['KEY_DATE_COLOR'] = parseInt(dateColor.substring(2), 16);
-  if (hourColor) {
-    dict['KEY_HOUR_COLOR'] = parseInt(hourColor.substring(2), 16);
+  dict['KEY_SECOND'] = parseInt(configData['second'], 10);
+  dict['KEY_SECOND_COLOR'] = parseInt(configData['second_color'].substring(2), 16);
+  dict['KEY_DATE_COLOR'] = parseInt(configData['date_color'].substring(2), 16);
+  if (configData['hour_color']) {
+    dict['KEY_HOUR_COLOR'] = parseInt(configData['hour_color'].substring(2), 16);
+  }
+  if (configData['background']) {
+    dict['KEY_BACKGROUND'] = parseInt(configData['background'], 10);
+  }
+  if (configData['date_size']) {
+    dict['KEY_DATE_SIZE'] = parseInt(configData['date_size'], 10);
+  }
+  if (configData['week_size']) {
+    dict['KEY_WEEK_SIZE'] = parseInt(configData['week_size'], 10);
   }
   console.log('dict: ' + JSON.stringify(dict));
 
