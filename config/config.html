@@ -80,7 +80,6 @@
       <select id="background" class="item-select">
         <option value="0" selected>Black</option>
         <option value="1">White</option>
-        <option value="2"> </option>
       </select>
       </label>
     </div>
@@ -91,6 +90,7 @@
         <input id='submit_button' type='button' class='item-button' value='SUBMIT'>
       </div>
     </div>
+    <a id="addoption" href="#"><font color="white">dummytext</font></a>
 <script type="text/javascript">
 function getConfigData() {
   var sobj = document.getElementById("second");
@@ -130,6 +130,15 @@ function getConfigData() {
     // Set the return URL depending on the runtime environment
     var return_to = getQueryParam('return_to', 'pebblejs://close#');
     document.location = return_to + encodeURIComponent(JSON.stringify(getConfigData()));
+  });
+
+  var addobj = document.getElementById("addoption");
+  addobj.addEventListener('click', function(){
+    var bobj = document.getElementById("background");
+    var obj = document.createElement('option');
+    obj.text = ' ';
+    obj.value = "2";
+    bobj.add(obj, null);
   });
 
 (function() {
