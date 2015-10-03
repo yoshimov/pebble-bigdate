@@ -9,7 +9,7 @@ static BitmapLayer *back_layer;
 
 static GPath *s_minute_arrow, *s_hour_arrow;
 static char s_num_buffer[4], s_day_buffer[6];
-static int hand_layout;
+static int hand_layout, bt_connection;
 static int second_style, date_size, week_size, background;
 static GColor second_color, date_color, hour_color;
 
@@ -35,6 +35,31 @@ bool set_persist_color(DictionaryIterator *iter, const uint32_t key, GColor *val
   return 0;
 }
 
+GBitmap *get_background_bitmap() {
+  if (background == 1) {
+#ifndef PBL_COLOR
+      second_color = GColorBlack;
+      date_color = GColorBlack;
+      hour_color = GColorBlack;
+#endif
+    return gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BG_NUM_WHITE);
+  } else if (background == 2) {
+#ifndef PBL_COLOR
+      second_color = GColorWhite;
+      date_color = GColorWhite;
+      hour_color = GColorWhite;
+#endif
+    return gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BG_LOGO);
+  } else {
+#ifndef PBL_COLOR
+      second_color = GColorWhite;
+      date_color = GColorWhite;
+      hour_color = GColorWhite;
+#endif
+    return gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BG_NUM);
+  }
+}
+
 static void config_received_handler(DictionaryIterator *iter, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "config received");
   set_persist_int(iter, KEY_SECOND, &second_style);
@@ -42,11 +67,7 @@ static void config_received_handler(DictionaryIterator *iter, void *context) {
   set_persist_int(iter, KEY_WEEK_SIZE, &week_size);
   if (set_persist_int(iter, KEY_BACKGROUND, &background)) {
     gbitmap_destroy(back_bitmap);
-    if (background) {
-      back_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BG_NUM_WHITE);
-    } else {
-      back_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BG_NUM);
-    }
+    back_bitmap = get_background_bitmap();
     bitmap_layer_set_bitmap(back_layer, back_bitmap);
   }
 #ifdef PBL_COLOR
@@ -120,15 +141,21 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
   struct tm *t = localtime(&now);
 
   // date
-  strftime(s_num_buffer, sizeof(s_num_buffer), "%e", t);
+  snprintf(s_num_buffer, sizeof(s_num_buffer), "%d", t->tm_mday);
   GPoint date_point = TEXT_POINTS[hand_layout][0];
   GFont font;
   if (date_size == 0) {
     font = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
   } else if (date_size == 1) {
     font = fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
-  } else {
+  } else if (date_size == 2) {
     font = fonts_get_system_font(FONT_KEY_BITHAM_42_LIGHT);
+#ifdef PBL_COLOR
+  } else if (date_size == 4) {
+    font = fonts_get_system_font(FONT_KEY_LECO_42_NUMBERS);
+#endif
+  } else {
+    font = fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD);
   }
   draw_outline_text(ctx, s_num_buffer, font, GRect(date_point.x, date_point.y, 72, 45), date_color, GColorBlack);
 
@@ -161,6 +188,12 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
     graphics_context_set_text_color(ctx, GColorWhite);
 #endif
     graphics_draw_text(ctx, "disconnect", font, GRect(0, 15, 144, 10), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+    if (bt_connection) {
+      vibes_short_pulse();
+    }
+    bt_connection = 0;
+  } else {
+    bt_connection = 1;
   }
 }
 
@@ -198,17 +231,9 @@ static void window_load(Window *window) {
   second_color = get_persist_color(KEY_SECOND_COLOR, GColorRed);
   date_color = get_persist_color(KEY_DATE_COLOR, GColorGreen);
   hour_color = get_persist_color(KEY_HOUR_COLOR, GColorWhite);
-#else
-  second_color = GColorWhite;
-  date_color = GColorWhite;
-  hour_color = GColorWhite;
 #endif
-
-  if (background) {
-    back_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BG_NUM_WHITE);
-  } else {
-    back_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BG_NUM);
-  }
+  
+  back_bitmap = get_background_bitmap();
   back_layer = bitmap_layer_create(bounds);
   bitmap_layer_set_bitmap(back_layer, back_bitmap);
   layer_add_child(window_layer, bitmap_layer_get_layer(back_layer));
@@ -241,6 +266,7 @@ static void init() {
   s_day_buffer[0] = '\0';
   s_num_buffer[0] = '\0';
   hand_layout = 0;
+  bt_connection = 0;
   // init hand paths
   s_minute_arrow = gpath_create(&MINUTE_HAND_POINTS);
   s_hour_arrow = gpath_create(&HOUR_HAND_POINTS);
