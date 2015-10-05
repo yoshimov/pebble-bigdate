@@ -155,13 +155,13 @@ function getConfigData() {
     bobj.add(obj, null);
   });
 
-(function() {
+//(function() {
   // load settings
   keylist.forEach(function(id){
     var obj = document.getElementById(id);
     obj.value = localStorage[id];
   });
-})();
+//})();
 </script>
 <script src="https://rawgit.com/pebble/slate/master/dist/js/slate.min.js"></script>
   </body>
