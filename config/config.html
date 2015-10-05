@@ -158,8 +158,10 @@ function getConfigData() {
 //(function() {
   // load settings
   keylist.forEach(function(id){
-    var obj = document.getElementById(id);
-    obj.value = localStorage[id];
+    if (localStorage[id]) {
+      var obj = document.getElementById(id);
+      obj.value = localStorage[id];
+    }
   });
 //})();
 </script>
