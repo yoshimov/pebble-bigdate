@@ -10,8 +10,8 @@ static BitmapLayer *back_layer;
 static GPath *s_minute_arrow, *s_hour_arrow;
 static char s_num_buffer[4], s_day_buffer[6];
 static int hand_layout, bt_connection;
-static int second_style, date_size, week_size, background;
-static GColor second_color, date_color, hour_color;
+static int second_style, date_size, week_size, week_style, background;
+static GColor second_color, date_color, hour_color, minute_color;
 
 bool set_persist_int(DictionaryIterator *iter, const uint32_t key, int *value) {
   Tuple *tuple = dict_find(iter, key);
@@ -41,6 +41,7 @@ GBitmap *get_background_bitmap() {
       second_color = GColorBlack;
       date_color = GColorBlack;
       hour_color = GColorBlack;
+      minute_color = GColorBlack;
 #endif
     return gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BG_NUM_WHITE);
   } else if (background == 2) {
@@ -48,6 +49,7 @@ GBitmap *get_background_bitmap() {
       second_color = GColorWhite;
       date_color = GColorWhite;
       hour_color = GColorWhite;
+      minute_color = GColorWhite;
 #endif
     return gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BG_LOGO);
   } else {
@@ -55,6 +57,7 @@ GBitmap *get_background_bitmap() {
       second_color = GColorWhite;
       date_color = GColorWhite;
       hour_color = GColorWhite;
+      minute_color = GColorWhite;
 #endif
     return gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BG_NUM);
   }
@@ -65,6 +68,7 @@ static void config_received_handler(DictionaryIterator *iter, void *context) {
   set_persist_int(iter, KEY_SECOND, &second_style);
   set_persist_int(iter, KEY_DATE_SIZE, &date_size);
   set_persist_int(iter, KEY_WEEK_SIZE, &week_size);
+  set_persist_int(iter, KEY_WEEK_STYLE, &week_style);
   if (set_persist_int(iter, KEY_BACKGROUND, &background)) {
     gbitmap_destroy(back_bitmap);
     back_bitmap = get_background_bitmap();
@@ -74,6 +78,7 @@ static void config_received_handler(DictionaryIterator *iter, void *context) {
   set_persist_color(iter, KEY_SECOND_COLOR, &second_color);
   set_persist_color(iter, KEY_DATE_COLOR, &date_color);
   set_persist_color(iter, KEY_HOUR_COLOR, &hour_color);
+  set_persist_color(iter, KEY_MINUTE_COLOR, &minute_color);
 #endif
 }
 
@@ -95,14 +100,15 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
 #endif
 
   // minute/hour hand
-  graphics_context_set_fill_color(ctx, hour_color);
   graphics_context_set_stroke_color(ctx, GColorBlack);
 
+  graphics_context_set_fill_color(ctx, minute_color);
   int32_t minute_angle = TRIG_MAX_ANGLE * (t->tm_min * 60 + t->tm_sec) / 3600;
   gpath_rotate_to(s_minute_arrow, minute_angle);
   gpath_draw_filled(ctx, s_minute_arrow);
   gpath_draw_outline(ctx, s_minute_arrow);
 
+  graphics_context_set_fill_color(ctx, hour_color);
   int32_t hour_angle = (TRIG_MAX_ANGLE * (((t->tm_hour % 12) * 6) + (t->tm_min / 10))) / (12 * 6);
   gpath_rotate_to(s_hour_arrow, hour_angle);
   gpath_draw_filled(ctx, s_hour_arrow);
@@ -160,6 +166,7 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
   draw_outline_text(ctx, s_num_buffer, font, GRect(date_point.x, date_point.y, 72, 45), date_color, GColorBlack);
 
   // week
+  if (week_style > 0) {
   strftime(s_day_buffer, sizeof(s_day_buffer), "%a", t);
   GPoint week_point = TEXT_POINTS[hand_layout][1];
   if (week_size == 0) {
@@ -170,7 +177,7 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
     font =  fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
   }
 #ifdef PBL_COLOR
-  if (t->tm_wday == 0 || t->tm_wday == 6) {
+  if (week_style == 2 && (t->tm_wday == 0 || t->tm_wday == 6)) {
     draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), GColorRed, GColorBulgarianRose);
   } else {
     draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), date_color, GColorArmyGreen);
@@ -178,6 +185,7 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
 #else
   draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), date_color, GColorBlack);
 #endif
+  }
 
   // bluetooth
   if (!bluetooth_connection_service_peek()) {
@@ -226,11 +234,13 @@ static void window_load(Window *window) {
   second_style = get_persist_int(KEY_SECOND, 1);
   date_size = get_persist_int(KEY_DATE_SIZE, 2);
   week_size = get_persist_int(KEY_WEEK_SIZE, 1);
+  week_style = get_persist_int(KEY_WEEK_STYLE, 2);
   background = get_persist_int(KEY_BACKGROUND, 0);
 #ifdef PBL_COLOR
   second_color = get_persist_color(KEY_SECOND_COLOR, GColorRed);
   date_color = get_persist_color(KEY_DATE_COLOR, GColorGreen);
   hour_color = get_persist_color(KEY_HOUR_COLOR, GColorWhite);
+  minute_color = get_persist_color(KEY_MINUTE_COLOR, GColorWhite);
 #endif
   
   back_bitmap = get_background_bitmap();

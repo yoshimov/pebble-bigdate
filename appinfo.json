@@ -4,9 +4,11 @@
         "KEY_DATE_COLOR": 11,
         "KEY_DATE_SIZE": 2,
         "KEY_HOUR_COLOR": 12,
+        "KEY_MINUTE_COLOR": 13,
         "KEY_SECOND": 0,
         "KEY_SECOND_COLOR": 10,
-        "KEY_WEEK_SIZE": 3
+        "KEY_WEEK_SIZE": 3,
+        "KEY_WEEK_STYLE": 4
     },
     "capabilities": [
         "configurable"
@@ -57,7 +59,7 @@
         "basalt"
     ],
     "uuid": "aacc53d2-bca3-4ced-b67c-2ed1d0ad0059",
-    "versionLabel": "1.3",
+    "versionLabel": "1.4",
     "watchapp": {
         "watchface": true
     }

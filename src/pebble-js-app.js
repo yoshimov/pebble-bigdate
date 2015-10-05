@@ -20,6 +20,9 @@ Pebble.addEventListener('webviewclosed', function(e) {
   if (configData['hour_color']) {
     dict['KEY_HOUR_COLOR'] = parseInt(configData['hour_color'].substring(2), 16);
   }
+  if (configData['minute_color']) {
+    dict['KEY_MINUTE_COLOR'] = parseInt(configData['minute_color'].substring(2), 16);
+  }
   if (configData['background']) {
     dict['KEY_BACKGROUND'] = parseInt(configData['background'], 10);
   }
@@ -28,6 +31,9 @@ Pebble.addEventListener('webviewclosed', function(e) {
   }
   if (configData['week_size']) {
     dict['KEY_WEEK_SIZE'] = parseInt(configData['week_size'], 10);
+  }
+  if (configData['week_style']) {
+    dict['KEY_WEEK_STYLE'] = parseInt(configData['week_style'], 10);
   }
   console.log('dict: ' + JSON.stringify(dict));
 
