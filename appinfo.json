@@ -3,6 +3,7 @@
         "KEY_BACKGROUND": 1,
         "KEY_DATE_COLOR": 11,
         "KEY_DATE_SIZE": 2,
+        "KEY_HAND_STYLE": 5,
         "KEY_HOUR_COLOR": 12,
         "KEY_MINUTE_COLOR": 13,
         "KEY_SECOND": 0,
@@ -59,7 +60,7 @@
         "basalt"
     ],
     "uuid": "aacc53d2-bca3-4ced-b67c-2ed1d0ad0059",
-    "versionLabel": "1.4",
+    "versionLabel": "1.5",
     "watchapp": {
         "watchface": true
     }

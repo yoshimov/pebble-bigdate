@@ -3,7 +3,7 @@ Pebble.addEventListener('ready', function() {
 });
 
 Pebble.addEventListener('showConfiguration', function() {
-  var url = 'https://rawgit.com/yoshimov/pebble-bigdate/master/config/config.html';
+  var url = 'https://cdn.rawgit.com/yoshimov/pebble-bigdate/16d78175098fe90a6963b97875cfbe5ac246e02a/config/config.html';
   console.log('Showing configuration page: ' + url);
 
   Pebble.openURL(url);
@@ -34,6 +34,9 @@ Pebble.addEventListener('webviewclosed', function(e) {
   }
   if (configData['week_style']) {
     dict['KEY_WEEK_STYLE'] = parseInt(configData['week_style'], 10);
+  }
+  if (configData['hand_style']) {
+    dict['KEY_HAND_STYLE'] = parseInt(configData['hand_style'], 10);
   }
   console.log('dict: ' + JSON.stringify(dict));
 

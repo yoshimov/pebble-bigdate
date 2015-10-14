@@ -7,11 +7,23 @@ static Layer *s_date_layer, *s_hands_layer;
 static GBitmap *back_bitmap;
 static BitmapLayer *back_layer;
 
-static GPath *s_minute_arrow, *s_hour_arrow;
+static GPath *s_minute_arrow = NULL, *s_hour_arrow = NULL;
 static char s_num_buffer[4], s_day_buffer[6];
 static int hand_layout, bt_connection;
-static int second_style, date_size, week_size, week_style, background;
+static int second_style, date_size, week_size, week_style, background, hand_style;
 static GColor second_color, date_color, hour_color, minute_color;
+
+// load minute/hour hands
+void load_hands() {
+  if (s_minute_arrow) {
+    gpath_destroy(s_minute_arrow);
+  }
+  if (s_hour_arrow) {
+    gpath_destroy(s_hour_arrow);
+  }
+  s_minute_arrow = gpath_create(HAND_STYLES[hand_style][0]);
+  s_hour_arrow = gpath_create(HAND_STYLES[hand_style][1]);
+}
 
 bool set_persist_int(DictionaryIterator *iter, const uint32_t key, int *value) {
   Tuple *tuple = dict_find(iter, key);
@@ -69,6 +81,9 @@ static void config_received_handler(DictionaryIterator *iter, void *context) {
   set_persist_int(iter, KEY_DATE_SIZE, &date_size);
   set_persist_int(iter, KEY_WEEK_SIZE, &week_size);
   set_persist_int(iter, KEY_WEEK_STYLE, &week_style);
+  if (set_persist_int(iter, KEY_HAND_STYLE, &hand_style)) {
+    load_hands();
+  }
   if (set_persist_int(iter, KEY_BACKGROUND, &background)) {
     gbitmap_destroy(back_bitmap);
     back_bitmap = get_background_bitmap();
@@ -97,19 +112,21 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
 
 #ifdef PBL_COLOR
   graphics_context_set_antialiased(ctx, true);
+  graphics_context_set_stroke_width(ctx, 1);
 #endif
 
   // minute/hour hand
   graphics_context_set_stroke_color(ctx, GColorBlack);
-
   graphics_context_set_fill_color(ctx, minute_color);
   int32_t minute_angle = TRIG_MAX_ANGLE * (t->tm_min * 60 + t->tm_sec) / 3600;
+  gpath_move_to(s_minute_arrow, center);
   gpath_rotate_to(s_minute_arrow, minute_angle);
   gpath_draw_filled(ctx, s_minute_arrow);
   gpath_draw_outline(ctx, s_minute_arrow);
 
   graphics_context_set_fill_color(ctx, hour_color);
   int32_t hour_angle = (TRIG_MAX_ANGLE * (((t->tm_hour % 12) * 6) + (t->tm_min / 10))) / (12 * 6);
+  gpath_move_to(s_hour_arrow, center);
   gpath_rotate_to(s_hour_arrow, hour_angle);
   gpath_draw_filled(ctx, s_hour_arrow);
   gpath_draw_outline(ctx, s_hour_arrow);
@@ -124,12 +141,17 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
   if (second_style == 1) {
     graphics_fill_circle(ctx, second_hand, 3);
   } else if (second_style > 1) {
-      graphics_draw_line(ctx, second_hand, center);
+#ifdef PBL_COLOR
+    if (second_style > 2) {
+      graphics_context_set_stroke_width(ctx, 3);
+    }
+#endif
+    graphics_draw_line(ctx, second_hand, center);
   }
 
   // dot in the middle
   graphics_context_set_fill_color(ctx, GColorBlack);
-  graphics_fill_rect(ctx, GRect(bounds.size.w / 2 - 1, bounds.size.h / 2 - 1, 3, 3), 0, GCornerNone);
+  graphics_fill_rect(ctx, GRect(center.x - 1, center.y - 1, 3, 3), 0, GCornerNone);
 }
 
 void draw_outline_text(GContext *ctx, const char* text, const GFont font, const GRect rect, GColor forecolor, GColor outlinecolor) {
@@ -167,23 +189,23 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
 
   // week
   if (week_style > 0) {
-  strftime(s_day_buffer, sizeof(s_day_buffer), "%a", t);
-  GPoint week_point = TEXT_POINTS[hand_layout][1];
-  if (week_size == 0) {
-    font =  fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
-  } else if (week_size == 1) {
-    font =  fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
-  } else {
-    font =  fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
-  }
+    strftime(s_day_buffer, sizeof(s_day_buffer), "%a", t);
+    GPoint week_point = TEXT_POINTS[hand_layout][1];
+    if (week_size == 0) {
+      font =  fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
+    } else if (week_size == 1) {
+      font =  fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+    } else {
+      font =  fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
+    }
 #ifdef PBL_COLOR
-  if (week_style == 2 && (t->tm_wday == 0 || t->tm_wday == 6)) {
-    draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), GColorRed, GColorBulgarianRose);
-  } else {
-    draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), date_color, GColorArmyGreen);
-  }
+    if (week_style == 2 && (t->tm_wday == 0 || t->tm_wday == 6)) {
+      draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), GColorRed, GColorBulgarianRose);
+    } else {
+      draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), date_color, GColorArmyGreen);
+    }
 #else
-  draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), date_color, GColorBlack);
+    draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), date_color, GColorBlack);
 #endif
   }
 
@@ -236,25 +258,28 @@ static void window_load(Window *window) {
   week_size = get_persist_int(KEY_WEEK_SIZE, 1);
   week_style = get_persist_int(KEY_WEEK_STYLE, 2);
   background = get_persist_int(KEY_BACKGROUND, 0);
+  hand_style = get_persist_int(KEY_HAND_STYLE, 1);
 #ifdef PBL_COLOR
   second_color = get_persist_color(KEY_SECOND_COLOR, GColorRed);
   date_color = get_persist_color(KEY_DATE_COLOR, GColorGreen);
   hour_color = get_persist_color(KEY_HOUR_COLOR, GColorWhite);
   minute_color = get_persist_color(KEY_MINUTE_COLOR, GColorWhite);
 #endif
+  // load minute and hour hands
+  load_hands();
   
   back_bitmap = get_background_bitmap();
   back_layer = bitmap_layer_create(bounds);
   bitmap_layer_set_bitmap(back_layer, back_bitmap);
   layer_add_child(window_layer, bitmap_layer_get_layer(back_layer));
 
-  s_hands_layer = layer_create(bounds);
-  layer_set_update_proc(s_hands_layer, hands_update_proc);
-  layer_add_child(window_layer, s_hands_layer);
-
   s_date_layer = layer_create(bounds);
   layer_set_update_proc(s_date_layer, date_update_proc);
   layer_add_child(window_layer, s_date_layer);
+
+  s_hands_layer = layer_create(bounds);
+  layer_set_update_proc(s_hands_layer, hands_update_proc);
+  layer_add_child(window_layer, s_hands_layer);
 }
 
 static void window_unload(Window *window) {
@@ -263,6 +288,9 @@ static void window_unload(Window *window) {
   //  layer_destroy(s_simple_bg_layer);
   layer_destroy(s_date_layer);
   layer_destroy(s_hands_layer);
+  // destroy hands
+  gpath_destroy(s_minute_arrow);
+  gpath_destroy(s_hour_arrow);
 }
 
 static void init() {
@@ -277,15 +305,6 @@ static void init() {
   s_num_buffer[0] = '\0';
   hand_layout = 0;
   bt_connection = 0;
-  // init hand paths
-  s_minute_arrow = gpath_create(&MINUTE_HAND_POINTS);
-  s_hour_arrow = gpath_create(&HOUR_HAND_POINTS);
-
-  Layer *window_layer = window_get_root_layer(window);
-  GRect bounds = layer_get_bounds(window_layer);
-  GPoint center = grect_center_point(&bounds);
-  gpath_move_to(s_minute_arrow, center);
-  gpath_move_to(s_hour_arrow, center);
 
   tick_timer_service_subscribe(SECOND_UNIT, handle_second_tick);
   app_message_register_inbox_received(config_received_handler);
@@ -293,9 +312,6 @@ static void init() {
 }
 
 static void deinit() {
-  gpath_destroy(s_minute_arrow);
-  gpath_destroy(s_hour_arrow);
-
   tick_timer_service_unsubscribe();
   window_destroy(window);
 }
