@@ -13,6 +13,7 @@
         <option value="0">None</option>
         <option value="1" selected>Ball</option>
         <option value="2">Line</option>
+        <option value="3">Bold Line</option>
       </select>
       </label>
     </div>
@@ -23,6 +24,21 @@
       <label class='item'>
         Second hand color
         <input id='second_color' type='text' class='item-color item-color-normal' value='0xff0000'>
+      </label>
+    </div>
+  </div>  
+
+  <div class='item-container'>
+    <div class='item-container-content'>
+      <label class='item'>
+        Hour and minute hand style
+      <select id="hand_style" class="item-select">
+        <option value="0">Thin index</option>
+        <option value="1" selected>Normal index</option>
+        <option value="2">Bold index</option>
+        <option value="3">Frying index</option>
+        <option value="4">Pyramid</option>
+      </select>
       </label>
     </div>
   </div>  
@@ -115,7 +131,7 @@
     <a id="addoption" href="#"><font color="white">.....</font></a>
 <script type="text/javascript">
 var keylist = ["second", "second_color", "date_color", "hour_color", "minute_color",
-  "date_size", "week_size", "week_style", "background"];
+  "date_size", "week_size", "week_style", "background", "hand_style"];
 function getConfigData() {
   var conf = {};
   keylist.forEach(function (id) {
