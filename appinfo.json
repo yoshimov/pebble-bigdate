@@ -57,10 +57,11 @@
     "shortName": "Analog Bigdate",
     "targetPlatforms": [
         "aplite",
-        "basalt"
+        "basalt",
+        "chalk"
     ],
     "uuid": "aacc53d2-bca3-4ced-b67c-2ed1d0ad0059",
-    "versionLabel": "1.5",
+    "versionLabel": "1.6",
     "watchapp": {
         "watchface": true
     }

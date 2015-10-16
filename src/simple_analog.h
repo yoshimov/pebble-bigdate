@@ -4,8 +4,7 @@
 
 // thin style
 static const GPathInfo THIN_MINUTE_HAND_POINTS = {
-  5,
-  (GPoint []) {
+  5, (GPoint []) {
     { -3, 10 },
     { 3, 10 },
     { 3, -65},
@@ -26,8 +25,7 @@ static const GPathInfo THIN_HOUR_HAND_POINTS = {
 
 // normal style
 static const GPathInfo MINUTE_HAND_POINTS = {
-  5,
-  (GPoint []) {
+  5, (GPoint []) {
     { -5, 10 },
     { 5, 10 },
     { 6, -60},
@@ -48,13 +46,12 @@ static const GPathInfo HOUR_HAND_POINTS = {
 
 // bold style
 static const GPathInfo BOLD_MINUTE_HAND_POINTS = {
-  5,
-  (GPoint []) {
+  5, (GPoint []) {
     { -7, 10 },
     { 7, 10 },
-    { 8, -60},
+    { 7, -60},
     { 0, -70 },
-    { -8, -60}
+    { -7, -60}
   }
 };
 
@@ -62,16 +59,15 @@ static const GPathInfo BOLD_HOUR_HAND_POINTS = {
   5, (GPoint []){
     {-7, 10},
     {7, 10},
-    {9, -35},
+    {7, -35},
     {0, -45},
-    {-9, -35}
+    {-7, -35}
   }
 };
 
 // flying style
 static const GPathInfo FLY_MINUTE_HAND_POINTS = {
-  5,
-  (GPoint []) {
+  5, (GPoint []) {
     { -6, -15 },
     { 6, -15 },
     { 8, -50},
@@ -82,18 +78,17 @@ static const GPathInfo FLY_MINUTE_HAND_POINTS = {
 
 static const GPathInfo FLY_HOUR_HAND_POINTS = {
   5, (GPoint []){
-    {-6, -15},
-    {6, -15},
-    {9, -35},
-    {0, -45},
-    {-9, -35}
+    {-7, -15},
+    {7, -15},
+    {10, -35},
+    {0, -50},
+    {-10, -35}
   }
 };
 
 // pyramid style
 static const GPathInfo PYRAMID_MINUTE_HAND_POINTS = {
-  11,
-  (GPoint []) {
+  11, (GPoint []) {
     { -3, 10 },
     { 3, 10 },
     { 3, -40},
@@ -124,13 +119,85 @@ static const GPathInfo PYRAMID_HOUR_HAND_POINTS = {
   }
 };
 
+// leaf style
+static const GPathInfo LEAF_MINUTE_HAND_POINTS = {
+  6, (GPoint []) {
+    { 0, 5 },
+    { -5, -30 },
+    { -5, -40 },
+    { 0, -70},
+    { 5, -40 },
+    { 5, -30 }
+  }
+};
+
+static const GPathInfo LEAF_HOUR_HAND_POINTS = {
+  6, (GPoint []){
+    {0, 5},
+    {-5, -15},
+    {-5, -25},
+    {0, -45},
+    {5, -25},
+    {5, -15}
+  }
+};
+
+// dauphin style
+static const GPathInfo DAUPHIN_MINUTE_HAND_POINTS = {
+  4, (GPoint []) {
+    { 0, -73 },
+    { -8, 3 },
+    { 0, 10 },
+    { 8, 3}
+  }
+};
+
+static const GPathInfo DAUPHIN_HOUR_HAND_POINTS = {
+  4, (GPoint []){
+    {0, -45},
+    {-9, 3},
+    {0, 10},
+    {9, 3}
+  }
+};
+
+// arrow style
+static const GPathInfo ARROW_MINUTE_HAND_POINTS = {
+  8, (GPoint []) {
+    {0, -70},
+    {-10, -52},
+    {-3, -55},
+    {-8, 0},
+    {0, 10},
+    {8, 0},
+    {3, -55},
+    {10, -52}
+  }
+};
+
+static const GPathInfo ARROW_HOUR_HAND_POINTS = {
+  8, (GPoint []){
+    {0, -50},
+    {-14, -30},
+    {-4, -33},
+    {-8, 0},
+    {0, 10},
+    {8, 0},
+    {4, -33},
+    {14, -30}
+  }
+};
+
 // hand style index
-static const GPathInfo *HAND_STYLES[5][2] = {
+static const GPathInfo *HAND_STYLES[8][2] = {
   {&THIN_MINUTE_HAND_POINTS, &THIN_HOUR_HAND_POINTS},
   {&MINUTE_HAND_POINTS, &HOUR_HAND_POINTS},
   {&BOLD_MINUTE_HAND_POINTS, &BOLD_HOUR_HAND_POINTS},
   {&FLY_MINUTE_HAND_POINTS, &FLY_HOUR_HAND_POINTS},
-  {&PYRAMID_MINUTE_HAND_POINTS, &PYRAMID_HOUR_HAND_POINTS}
+  {&PYRAMID_MINUTE_HAND_POINTS, &PYRAMID_HOUR_HAND_POINTS},
+  {&LEAF_MINUTE_HAND_POINTS, &LEAF_HOUR_HAND_POINTS},
+  {&DAUPHIN_MINUTE_HAND_POINTS, &DAUPHIN_HOUR_HAND_POINTS},
+  {&ARROW_MINUTE_HAND_POINTS, &ARROW_HOUR_HAND_POINTS}
 };
 
 // date and week text location
