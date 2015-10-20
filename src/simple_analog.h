@@ -146,45 +146,45 @@ static const GPathInfo LEAF_HOUR_HAND_POINTS = {
 static const GPathInfo DAUPHIN_MINUTE_HAND_POINTS = {
   4, (GPoint []) {
     { 0, -73 },
-    { -8, 3 },
+    { -8, -2 },
     { 0, 10 },
-    { 8, 3}
+    { 8, -2}
   }
 };
 
 static const GPathInfo DAUPHIN_HOUR_HAND_POINTS = {
   4, (GPoint []){
     {0, -45},
-    {-9, 3},
+    {-9, -2},
     {0, 10},
-    {9, 3}
+    {9, -2}
   }
 };
 
 // arrow style
 static const GPathInfo ARROW_MINUTE_HAND_POINTS = {
   8, (GPoint []) {
-    {0, -70},
-    {-10, -52},
-    {-3, -55},
-    {-8, 0},
+    {0, -73},
+    {-12, -46},
+    {-4, -48},
+    {-9, 0},
     {0, 10},
-    {8, 0},
-    {3, -55},
-    {10, -52}
+    {9, 0},
+    {4, -48},
+    {12, -46}
   }
 };
 
 static const GPathInfo ARROW_HOUR_HAND_POINTS = {
   8, (GPoint []){
     {0, -50},
-    {-14, -30},
-    {-4, -33},
-    {-8, 0},
+    {-15, -28},
+    {-5, -30},
+    {-10, 0},
     {0, 10},
-    {8, 0},
-    {4, -33},
-    {14, -30}
+    {10, 0},
+    {5, -30},
+    {15, -28}
   }
 };
 
