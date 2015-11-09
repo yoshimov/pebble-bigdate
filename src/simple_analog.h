@@ -217,6 +217,10 @@ static const GPoint TEXT_POINTS[13][2] = {
   { {72, 20}, {72, 110}} // 1100
 };
 
+#define TEXT_WIDTH 72
+#define TEXT_HEIGHT 45
+#define ANIM_DURATION 500
+
 #define KEY_SECOND 0
 #define KEY_BACKGROUND 1
 #define KEY_DATE_SIZE 2

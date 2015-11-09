@@ -4,14 +4,16 @@
 
 static Window *window;
 static Layer *s_date_layer, *s_hands_layer;
+static TextLayer *t_date, *t_week;
 static GBitmap *back_bitmap;
 static BitmapLayer *back_layer;
 
 static GPath *s_minute_arrow = NULL, *s_hour_arrow = NULL;
 static char s_num_buffer[4], s_day_buffer[6];
-static int hand_layout, bt_connection;
+static int hand_layout, pre_hand_layout, bt_connection;
 static int second_style, date_size, week_size, week_style, background, hand_style;
 static GColor second_color, date_color, hour_color, minute_color;
+static PropertyAnimation *anim_date, *anim_week;
 
 // load minute/hour hands
 void load_hands() {
@@ -97,6 +99,7 @@ static void config_received_handler(DictionaryIterator *iter, void *context) {
 #endif
 }
 
+// update hands layer
 static void hands_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   GPoint center = grect_center_point(&bounds);
@@ -133,6 +136,29 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
 
   hand_layout = 1 << (int)(minute_angle * 4 / TRIG_MAX_ANGLE);
   hand_layout |= 1 << (int)(hour_angle * 4 / TRIG_MAX_ANGLE);
+  if (hand_layout != pre_hand_layout) {
+    //APP_LOG(APP_LOG_LEVEL_DEBUG, "animation stated %d", hand_layout);
+    if (anim_date) {
+      property_animation_destroy(anim_date);
+    }
+    GRect date_s = GRect(TEXT_POINTS[pre_hand_layout][0].x, TEXT_POINTS[pre_hand_layout][0].y, TEXT_WIDTH, TEXT_HEIGHT);
+    GRect date_f = GRect(TEXT_POINTS[hand_layout][0].x, TEXT_POINTS[hand_layout][0].y, TEXT_WIDTH, TEXT_HEIGHT);
+    anim_date = property_animation_create_layer_frame((Layer*)t_date, &date_s, &date_f);
+    animation_set_duration((Animation*)anim_date, ANIM_DURATION);
+    animation_set_curve((Animation*)anim_date, AnimationCurveEaseInOut);
+    animation_schedule((Animation*)anim_date);
+    if (anim_week) {
+      property_animation_destroy(anim_week);
+    }
+    GRect week_s = GRect(TEXT_POINTS[pre_hand_layout][1].x, TEXT_POINTS[pre_hand_layout][1].y, TEXT_WIDTH, TEXT_HEIGHT);
+    GRect week_f = GRect(TEXT_POINTS[hand_layout][1].x, TEXT_POINTS[hand_layout][1].y, TEXT_WIDTH, TEXT_HEIGHT);
+    anim_week = property_animation_create_layer_frame((Layer*)t_week, &week_s, &week_f);
+    animation_set_duration((Animation*)anim_week, ANIM_DURATION);
+    animation_set_curve((Animation*)anim_week, AnimationCurveEaseInOut);
+    animation_schedule((Animation*)anim_week);
+
+    pre_hand_layout = hand_layout;
+  }
 //  APP_LOG(APP_LOG_LEVEL_DEBUG, "hand layout %d", hand_layout);
 
   // second hand
@@ -154,24 +180,15 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
   graphics_fill_rect(ctx, GRect(center.x - 1, center.y - 1, 3, 3), 0, GCornerNone);
 }
 
-void draw_outline_text(GContext *ctx, const char* text, const GFont font, const GRect rect, GColor forecolor, GColor outlinecolor) {
-//  graphics_context_set_text_color(ctx, outlinecolor);
-//  graphics_draw_text(ctx, text, font, GRect(rect.origin.x+1, rect.origin.y+1, rect.size.w, rect.size.h), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
-//  graphics_draw_text(ctx, text, font, GRect(rect.origin.x+1, rect.origin.y-1, rect.size.w, rect.size.h), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
-//  graphics_draw_text(ctx, text, font, GRect(rect.origin.x-1, rect.origin.y+1, rect.size.w, rect.size.h), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
-//  graphics_draw_text(ctx, text, font, GRect(rect.origin.x-1, rect.origin.y-1, rect.size.w, rect.size.h), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
-  graphics_context_set_text_color(ctx, forecolor);
-  graphics_draw_text(ctx, text, font, rect, GTextOverflowModeFill, GTextAlignmentCenter, NULL);
-}
-
-static void date_update_proc(Layer *layer, GContext *ctx) {
+// update date number
+static void update_date(TextLayer *layer, GContext *ctx) {
   time_t now = time(NULL);
   struct tm *t = localtime(&now);
+  GFont font;
 
   // date
   snprintf(s_num_buffer, sizeof(s_num_buffer), "%d", t->tm_mday);
-  GPoint date_point = TEXT_POINTS[hand_layout][0];
-  GFont font;
+  text_layer_set_text(layer, s_num_buffer);
   if (date_size == 0) {
     font = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
   } else if (date_size == 1) {
@@ -185,28 +202,61 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
   } else {
     font = fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD);
   }
-  draw_outline_text(ctx, s_num_buffer, font, GRect(date_point.x, date_point.y, 72, 45), date_color, GColorBlack);
+  text_layer_set_text_color(layer, date_color);
+  text_layer_set_background_color(layer, GColorClear);
+  text_layer_set_text_alignment(layer, GTextAlignmentCenter);
+  text_layer_set_font(layer, font);
+}
+
+// update day of week text
+static void update_week(TextLayer *layer, GContext *ctx) {
+  time_t now = time(NULL);
+  struct tm *t = localtime(&now);
+  GFont font;
+
+  strftime(s_day_buffer, sizeof(s_day_buffer), "%a", t);
+  text_layer_set_text(layer, s_day_buffer);
+  if (week_size == 0) {
+    font =  fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
+  } else if (week_size == 1) {
+    font =  fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+  } else {
+    font =  fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
+  }
+  text_layer_set_font(layer, font);
+#ifdef PBL_COLOR
+  if (week_style == 2 && (t->tm_wday == 0 || t->tm_wday == 6)) {
+    text_layer_set_text_color(layer, GColorRed);
+  } else {
+#endif
+    text_layer_set_text_color(layer, date_color);
+#ifdef PBL_COLOR
+  }
+#endif
+  text_layer_set_background_color(layer, GColorClear);
+  text_layer_set_text_alignment(layer, GTextAlignmentCenter);
+}
+
+// update text layer
+static void date_update_proc(Layer *layer, GContext *ctx) {
+  GFont font;
+
+//  APP_LOG(APP_LOG_LEVEL_DEBUG, "date_update stated");
+
+  // date
+  GPoint date_point = TEXT_POINTS[hand_layout][0];
+  if (anim_date && !animation_is_scheduled((Animation*)anim_date)) {
+    layer_set_frame((Layer*)t_date, GRect(date_point.x, date_point.y, TEXT_WIDTH, TEXT_HEIGHT));
+  }
+  update_date(t_date, ctx);
 
   // week
   if (week_style > 0) {
-    strftime(s_day_buffer, sizeof(s_day_buffer), "%a", t);
     GPoint week_point = TEXT_POINTS[hand_layout][1];
-    if (week_size == 0) {
-      font =  fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
-    } else if (week_size == 1) {
-      font =  fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
-    } else {
-      font =  fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
+    if (anim_week && !animation_is_scheduled((Animation*)anim_week)) {
+      layer_set_frame((Layer*)t_week, GRect(week_point.x, week_point.y, TEXT_WIDTH, TEXT_HEIGHT));
     }
-#ifdef PBL_COLOR
-    if (week_style == 2 && (t->tm_wday == 0 || t->tm_wday == 6)) {
-      draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), GColorRed, GColorBulgarianRose);
-    } else {
-      draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), date_color, GColorArmyGreen);
-    }
-#else
-    draw_outline_text(ctx, s_day_buffer, font, GRect(week_point.x, week_point.y, 72, 40), date_color, GColorBlack);
-#endif
+    update_week(t_week, ctx);
   }
 
   // bluetooth
@@ -276,16 +326,32 @@ static void window_load(Window *window) {
   s_date_layer = layer_create(bounds);
   layer_set_update_proc(s_date_layer, date_update_proc);
   layer_add_child(window_layer, s_date_layer);
-
+  t_date = text_layer_create(GRect(0, 0, 0, 0));
+  layer_add_child(s_date_layer, text_layer_get_layer(t_date));
+  t_week = text_layer_create(GRect(0, 0, 0, 0));
+  layer_add_child(s_date_layer, text_layer_get_layer(t_week));
+  
   s_hands_layer = layer_create(bounds);
   layer_set_update_proc(s_hands_layer, hands_update_proc);
   layer_add_child(window_layer, s_hands_layer);
+
+  anim_date = NULL;
+  anim_week = NULL;
 }
 
 static void window_unload(Window *window) {
+  animation_unschedule_all();
+  if (anim_date) {
+    property_animation_destroy(anim_date);
+  }
+  if (anim_week) {
+    property_animation_destroy(anim_week);
+  }
   bitmap_layer_destroy(back_layer);
   gbitmap_destroy(back_bitmap);
   //  layer_destroy(s_simple_bg_layer);
+  text_layer_destroy(t_date);
+  text_layer_destroy(t_week);
   layer_destroy(s_date_layer);
   layer_destroy(s_hands_layer);
   // destroy hands
@@ -304,8 +370,9 @@ static void init() {
   s_day_buffer[0] = '\0';
   s_num_buffer[0] = '\0';
   hand_layout = 0;
+  pre_hand_layout = 0;
   bt_connection = 0;
-
+  
   tick_timer_service_subscribe(SECOND_UNIT, handle_second_tick);
   app_message_register_inbox_received(config_received_handler);
   app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
