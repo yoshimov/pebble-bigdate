@@ -3,7 +3,7 @@ Pebble.addEventListener('ready', function() {
 });
 
 Pebble.addEventListener('showConfiguration', function() {
-  var url = 'https://cdn.rawgit.com/yoshimov/pebble-bigdate/a9f6fa149c09569549c850c9a2f7080bea45e704/config/config.html';
+  var url = 'https://cdn.rawgit.com/yoshimov/pebble-bigdate/28e010560f877a2b96bac0997a76956e6f531262/config/config.html';
   console.log('Showing configuration page: ' + url);
 
   Pebble.openURL(url);

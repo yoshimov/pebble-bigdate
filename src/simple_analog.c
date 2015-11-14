@@ -97,6 +97,7 @@ static void config_received_handler(DictionaryIterator *iter, void *context) {
   set_persist_color(iter, KEY_HOUR_COLOR, &hour_color);
   set_persist_color(iter, KEY_MINUTE_COLOR, &minute_color);
 #endif
+  layer_mark_dirty(window_get_root_layer(window));
 }
 
 // update hands layer
@@ -203,8 +204,6 @@ static void update_date(TextLayer *layer, GContext *ctx) {
     font = fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD);
   }
   text_layer_set_text_color(layer, date_color);
-  text_layer_set_background_color(layer, GColorClear);
-  text_layer_set_text_alignment(layer, GTextAlignmentCenter);
   text_layer_set_font(layer, font);
 }
 
@@ -214,7 +213,11 @@ static void update_week(TextLayer *layer, GContext *ctx) {
   struct tm *t = localtime(&now);
   GFont font;
 
-  strftime(s_day_buffer, sizeof(s_day_buffer), "%a", t);
+  if (week_style > 0) {
+    strftime(s_day_buffer, sizeof(s_day_buffer), "%a", t);
+  } else {
+    s_day_buffer[0] = '\0';
+  }
   text_layer_set_text(layer, s_day_buffer);
   if (week_size == 0) {
     font =  fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
@@ -233,8 +236,6 @@ static void update_week(TextLayer *layer, GContext *ctx) {
 #ifdef PBL_COLOR
   }
 #endif
-  text_layer_set_background_color(layer, GColorClear);
-  text_layer_set_text_alignment(layer, GTextAlignmentCenter);
 }
 
 // update text layer
@@ -245,19 +246,19 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
 
   // date
   GPoint date_point = TEXT_POINTS[hand_layout][0];
-  if (anim_date && !animation_is_scheduled((Animation*)anim_date)) {
-    layer_set_frame((Layer*)t_date, GRect(date_point.x, date_point.y, TEXT_WIDTH, TEXT_HEIGHT));
-  }
+//  if (anim_date && !animation_is_scheduled((Animation*)anim_date)) {
+//    layer_set_frame((Layer*)t_date, GRect(date_point.x, date_point.y, TEXT_WIDTH, TEXT_HEIGHT));
+//  }
   update_date(t_date, ctx);
 
   // week
-  if (week_style > 0) {
+//  if (week_style > 0) {
     GPoint week_point = TEXT_POINTS[hand_layout][1];
-    if (anim_week && !animation_is_scheduled((Animation*)anim_week)) {
-      layer_set_frame((Layer*)t_week, GRect(week_point.x, week_point.y, TEXT_WIDTH, TEXT_HEIGHT));
-    }
+//    if (anim_week && !animation_is_scheduled((Animation*)anim_week)) {
+//      layer_set_frame((Layer*)t_week, GRect(week_point.x, week_point.y, TEXT_WIDTH, TEXT_HEIGHT));
+//    }
     update_week(t_week, ctx);
-  }
+//  }
 
   // bluetooth
   if (!bluetooth_connection_service_peek()) {
@@ -278,7 +279,8 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
 }
 
 static void handle_second_tick(struct tm *tick_time, TimeUnits units_changed) {
-  layer_mark_dirty(window_get_root_layer(window));
+//  layer_mark_dirty(window_get_root_layer(window));
+  layer_mark_dirty(s_hands_layer);
 }
 
 GColor get_persist_color(const uint32_t key, GColor color) {
@@ -327,8 +329,12 @@ static void window_load(Window *window) {
   layer_set_update_proc(s_date_layer, date_update_proc);
   layer_add_child(window_layer, s_date_layer);
   t_date = text_layer_create(GRect(0, 0, 0, 0));
+  text_layer_set_background_color(t_date, GColorClear);
+  text_layer_set_text_alignment(t_date, GTextAlignmentCenter);
   layer_add_child(s_date_layer, text_layer_get_layer(t_date));
   t_week = text_layer_create(GRect(0, 0, 0, 0));
+  text_layer_set_background_color(t_week, GColorClear);
+  text_layer_set_text_alignment(t_week, GTextAlignmentCenter);
   layer_add_child(s_date_layer, text_layer_get_layer(t_week));
   
   s_hands_layer = layer_create(bounds);
